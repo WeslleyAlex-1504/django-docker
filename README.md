@@ -15,12 +15,17 @@ Estrutura inicial de um projeto Django com Docker, PostgreSQL e variáveis de am
 django-docker/
 ├── app/
 │   ├── apps/
-│   │   └── core/
-│   │       ├── __init__.py
-│   │       ├── asgi.py
-│   │       ├── settings.py
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── asgi.py
+│   │   │   ├── settings.py
+│   │   │   ├── urls.py
+│   │   │   └── wsgi.py
+│   │   └── inventory/
+│   │       ├── models.py
+│   │       ├── views.py
 │   │       ├── urls.py
-│   │       └── wsgi.py
+│   │       └── templates/
 │   ├── manage.py
 │   ├── requirements.txt
 │   └── __init__.py
@@ -84,6 +89,17 @@ docker-compose exec web python manage.py collectstatic --noinput
 ```bash
 docker-compose down
 ```
+
+
+## Funcionalidades implementadas (cadastro/estoque/vencimento)
+
+- Cadastro de **produtos** (nome, SKU, descrição e status ativo).
+- Cadastro de **lotes de estoque** com quantidade e data de vencimento.
+- Painel em `/estoque/` com:
+  - total de produtos cadastrados,
+  - total de itens em estoque,
+  - lotes vencidos e próximos do vencimento (30 dias).
+- Administração completa no Django Admin para produtos e lotes.
 
 ## Próximos Passos
 

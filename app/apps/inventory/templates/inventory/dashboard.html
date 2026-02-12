@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Estoque</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background: #f8fafc; color: #0f172a; }
+        .container { max-width: 1080px; margin: 0 auto; }
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        .card { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+        .actions { margin-bottom: 1rem; }
+        .btn { background: #2563eb; color: white; padding: .6rem 1rem; border-radius: 8px; text-decoration: none; margin-right: .5rem; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid #e2e8f0; padding: .6rem; text-align: left; }
+        th { background: #e2e8f0; }
+        .muted { color: #64748b; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Cadastro, Estoque e Vencimento</h1>
+    <p class="muted">Painel inicial para cadastro de produtos e monitoramento de lotes.</p>
+
+    <div class="cards">
+        <div class="card"><strong>Produtos cadastrados</strong><br>{{ produtos|length }}</div>
+        <div class="card"><strong>Total em estoque</strong><br>{{ total_itens }} unidades</div>
+        <div class="card"><strong>Lotes vencidos</strong><br>{{ lotes_vencidos|length }}</div>
+    </div>
+
+    <div class="actions">
+        <a class="btn" href="{% url 'inventory:produto-create' %}?next=/">Novo produto</a>
+        <a class="btn" href="{% url 'inventory:lote-create' %}?next=/">Novo lote</a>
+        <a class="btn" href="/admin/" target="_blank" rel="noreferrer">Admin</a>
+    </div>
+
+    <h2>Produtos</h2>
+    <table>
+        <thead><tr><th>Nome</th><th>SKU</th><th>Quantidade total</th></tr></thead>
+        <tbody>
+            {% for produto in produtos %}
+            <tr>
+                <td>{{ produto.nome }}</td>
+                <td>{{ produto.sku }}</td>
+                <td>{{ produto.quantidade_total }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">Nenhum produto cadastrado.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Lotes vencendo em até 30 dias</h2>
+    <table>
+        <thead><tr><th>Produto</th><th>Lote</th><th>Qtd.</th><th>Vencimento</th></tr></thead>
+        <tbody>
+            {% for lote in lotes_a_vencer %}
+            <tr>
+                <td>{{ lote.produto.nome }}</td>
+                <td>{{ lote.codigo_lote }}</td>
+                <td>{{ lote.quantidade }}</td>
+                <td>{{ lote.data_vencimento }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">Nenhum lote próximo do vencimento.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

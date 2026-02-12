@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo cadastro</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8fafc; }
+        .box { max-width: 640px; margin: 2rem auto; background: white; padding: 1.5rem; border-radius: 10px; }
+        form p { margin-bottom: .8rem; }
+        button { background: #2563eb; color: white; border: none; padding: .6rem 1rem; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>Novo cadastro</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Salvar</button>
+        </form>
+    </div>
+</body>
+</html>
