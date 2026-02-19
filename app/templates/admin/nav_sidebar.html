@@ -1,0 +1,183 @@
+{% load i18n %}
+<div id="nav-sidebar">
+    {% for app in available_apps %}
+    <div class="module">
+        <h2>{{ app.name }}</h2>
+        <ul>
+            {% for model in app.models %}
+            <li>
+                {% if model.admin_url %}
+                <a href="{% url model.admin_url %}">{{ model.name }}</a>
+                {% else %}
+                <span>{{ model.name }}</span>
+                {% endif %}
+                {% if model.add_url %}
+                <a href="{% url model.add_url %}" class="addlink" title="{% blocktrans with name=model.name %}Add {{ name }}{% endblocktrans %}">➕</a>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endfor %}
+
+    {% if user.is_staff %}
+    <div class="module">
+        <h2>{% trans 'Administration' %}</h2>
+        <ul>
+            <li><a href="{% url 'admin:auth_user_changelist' %}">{% trans 'Users' %}</a></li>
+            <li><a href="{% url 'admin:auth_group_changelist' %}">{% trans 'Groups' %}</a></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="module">
+        <h2>{% trans 'Recent Actions' %}</h2>
+        <ul>
+            {% load log %}
+            {% get_admin_log 10 as admin_log for_user user %}
+            {% for entry in admin_log %}
+            <li>
+                <span class="action-type {{ entry.action_flag }}">{{ entry.get_action_flag_display }}</span>
+                <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                <span class="action-time">{{ entry.action_time|date:"d/m H:i" }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<style>
+    #nav-sidebar {
+        background: #f8fafc;
+        border-right: 1px solid #e5e7eb;
+        padding: 1rem;
+    }
+
+    #nav-sidebar .module {
+        margin-bottom: 1.5rem;
+    }
+
+    #nav-sidebar .module h2 {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        margin: 0 0 0.5rem 0;
+        padding: 0.875rem 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    #nav-sidebar .module ul {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    #nav-sidebar .module li {
+        border-bottom: 1px solid #f3f4f6;
+        position: relative;
+    }
+
+    #nav-sidebar .module li:last-child {
+        border-bottom: none;
+    }
+
+    #nav-sidebar .module a {
+        display: block;
+        padding: 0.875rem 1rem;
+        color: #374151;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+    #nav-sidebar .module a:hover {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding-left: 1.5rem;
+    }
+
+    #nav-sidebar .module .addlink {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #10b981;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        text-decoration: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    #nav-sidebar .module li:hover .addlink {
+        opacity: 1;
+    }
+
+    #nav-sidebar .module .addlink:hover {
+        background: #059669;
+    }
+
+    /* Action types */
+    .action-type {
+        display: inline-block;
+        padding: 0.125rem 0.375rem;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+
+    .action-type.addition {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .action-type.change {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .action-type.deletion {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .action-time {
+        color: #6b7280;
+        font-size: 0.75rem;
+        margin-left: 0.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        #nav-sidebar {
+            position: static;
+            width: 100%;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+        }
+
+        #nav-sidebar .module {
+            margin-bottom: 1rem;
+        }
+
+        #nav-sidebar .module h2 {
+            font-size: 0.9rem;
+            padding: 0.75rem;
+        }
+
+        #nav-sidebar .module a {
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+    }
+</style>

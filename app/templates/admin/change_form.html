@@ -1,0 +1,355 @@
+{% extends "admin/base.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block title %}{% if add %}{% blocktrans with name=opts.verbose_name %}Add {{ name }}{% endblocktrans %}{% else %}{% blocktrans with name=opts.verbose_name %}Change {{ name }}{% endblocktrans %}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="change-form-container">
+    <div class="form-header">
+        <h1>{% if add %}Adicionar {{ opts.verbose_name }}{% else %}Editar {{ opts.verbose_name }}{% endif %}</h1>
+        {% if not add %}
+        <div class="object-info">
+            <strong>{{ original|truncatechars:50 }}</strong>
+            {% if opts.model_name == 'produto' %}
+                <span class="object-meta">SKU: {{ original.sku }}</span>
+            {% elif opts.model_name == 'loteestoque' %}
+                <span class="object-meta">Código: {{ original.codigo_lote }} | Produto: {{ original.produto.nome }}</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% block form_top %}{% endblock %}
+
+    <form{% if form_url %} action="{{ form_url }}"{% endif %} method="post" id="{{ opts.model_name }}_form" novalidate>
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="form-errors">
+            <h3>Por favor, corrija os erros abaixo:</h3>
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="form-content">
+            {% if is_popup %}
+            <input type="hidden" name="_popup" value="1">
+            {% endif %}
+            {% if to_field %}
+            <input type="hidden" name="_to_field" value="{{ to_field }}">
+            {% endif %}
+            {% if save_on_top %}
+            {% submit_row %}
+            {% endif %}
+
+            {% block field_sets %}
+            {% for fieldset in adminform %}
+            <fieldset class="module aligned {{ fieldset.classes }}">
+                {% if fieldset.name %}
+                <h2>{{ fieldset.name }}</h2>
+                {% endif %}
+                {% if fieldset.description %}
+                <div class="description">{{ fieldset.description|safe }}</div>
+                {% endif %}
+                {% for line in fieldset %}
+                <div class="form-row{% if line.fields|length == 1 and line.errors %} errors{% endif %}{% for field in line.fields %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
+                    {% if line.fields|length == 1 %}
+                        {{ line.errors }}
+                    {% endif %}
+                    {% for field in line.fields %}
+                    <div{% if not line.fields|length == 1 %} class="fieldBox{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% if not field.is_readonly and field.errors %} errors{% endif %}{% if field.field.is_hidden %} hidden{% endif %}"{% endif %}>
+                        {% if field.is_checkbox %}
+                            {{ field.field }}{{ field.label_tag }}
+                        {% else %}
+                            {{ field.label_tag }}
+                            {% if field.is_readonly %}
+                                <div class="readonly">{{ field.contents }}</div>
+                            {% else %}
+                                {{ field.field }}
+                            {% endif %}
+                        {% endif %}
+                        {% if field.field.help_text %}
+                            <div class="help">{{ field.field.help_text|safe }}</div>
+                        {% endif %}
+                        {% if not line.fields|length == 1 and not field.is_readonly %}{{ field.errors }}{% endif %}
+                    </div>
+                    {% if not forloop.last %}<div class="inline-label-spacer"></div>{% endif %}
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </fieldset>
+            {% endfor %}
+            {% endblock %}
+
+            {% block after_field_sets %}{% endblock %}
+
+            {% block inline_field_sets %}
+            {% for inline_admin_formset in inline_admin_formsets %}
+                {% include inline_admin_formset.opts.template %}
+            {% endfor %}
+            {% endblock %}
+
+            {% block after_related_objects %}{% endblock %}
+
+            <div class="submit-row">
+                {% submit_row %}
+            </div>
+        </div>
+    </form>
+</div>
+
+<style>
+    .change-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #10b981;
+    }
+
+    .form-header h1 {
+        color: #1e293b;
+        margin: 0 0 0.5rem 0;
+        font-size: 2rem;
+    }
+
+    .object-info {
+        color: #6b7280;
+        font-size: 1rem;
+    }
+
+    .object-meta {
+        display: block;
+        margin-top: 0.25rem;
+        color: #10b981;
+        font-weight: 500;
+    }
+
+    .form-errors {
+        background: #fef2f2;
+        color: #dc2626;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        border-left: 4px solid #dc2626;
+    }
+
+    .form-errors h3 {
+        margin: 0 0 1rem 0;
+        color: #dc2626;
+    }
+
+    .form-errors ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .form-errors li {
+        margin-bottom: 0.5rem;
+    }
+
+    .form-content {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 2rem;
+    }
+
+    fieldset {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+    }
+
+    fieldset h2 {
+        color: #1e293b;
+        font-size: 1.25rem;
+        margin: 0 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #10b981;
+    }
+
+    .description {
+        color: #6b7280;
+        margin-bottom: 1rem;
+        font-style: italic;
+    }
+
+    .form-row {
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-row label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-row input[type="text"],
+    .form-row input[type="password"],
+    .form-row input[type="email"],
+    .form-row input[type="number"],
+    .form-row input[type="date"],
+    .form-row select,
+    .form-row textarea {
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+        background: white;
+    }
+
+    .form-row input[type="text"]:focus,
+    .form-row input[type="password"]:focus,
+    .form-row input[type="email"]:focus,
+    .form-row input[type="number"]:focus,
+    .form-row input[type="date"]:focus,
+    .form-row select:focus,
+    .form-row textarea:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    .form-row textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-row.errors input,
+    .form-row.errors select,
+    .form-row.errors textarea {
+        border-color: #dc2626;
+    }
+
+    .form-row .help {
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        font-style: italic;
+    }
+
+    .form-row.errors .errorlist {
+        color: #dc2626;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        list-style: none;
+        padding: 0;
+    }
+
+    .form-row.errors .errorlist li {
+        margin-bottom: 0.25rem;
+    }
+
+    .submit-row {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+        margin-top: 2rem;
+    }
+
+    .submit-row input[type="submit"] {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .submit-row input[type="submit"]:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .submit-row a {
+        color: #6b7280;
+        text-decoration: none;
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+
+    .submit-row a:hover {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    /* Field specific styles */
+    .field-sku input {
+        font-family: monospace;
+        text-transform: uppercase;
+    }
+
+    .field-quantidade input {
+        max-width: 150px;
+    }
+
+    .field-data_vencimento input {
+        max-width: 200px;
+    }
+
+    /* Checkbox styling */
+    .form-row input[type="checkbox"] {
+        width: auto;
+        margin-right: 0.5rem;
+    }
+
+    .form-row .checkbox-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .change-form-container {
+            margin: 0;
+        }
+
+        .form-content {
+            padding: 1rem;
+        }
+
+        .form-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .submit-row {
+            flex-direction: column;
+        }
+
+        .submit-row input[type="submit"],
+        .submit-row a {
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Fruteira - Sistema de Controle de Estoque{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <h1>Bem-vindo à Fruteira!</h1>
+    <p>Sistema completo para controle de estoque e vencimento de frutas</p>
+</div>
+
+<div class="features">
+    <div class="feature-card">
+        <div class="icon">📦</div>
+        <h3>Controle de Estoque</h3>
+        <p>Gerencie seus produtos e lotes de forma eficiente. Acompanhe quantidades e datas de vencimento.</p>
+        {% if user.is_authenticated %}
+            <a href="{% url 'inventory:dashboard' %}" class="btn">Ver Dashboard</a>
+        {% endif %}
+    </div>
+
+    <div class="feature-card">
+        <div class="icon">📊</div>
+        <h3>Relatórios</h3>
+        <p>Visualize produtos cadastrados, itens em estoque e alertas de vencimento próximos.</p>
+        {% if user.is_authenticated %}
+            <a href="{% url 'inventory:dashboard' %}" class="btn">Ver Relatórios</a>
+        {% endif %}
+    </div>
+
+    <div class="feature-card">
+        <div class="icon">⚡</div>
+        <h3>Rápido e Fácil</h3>
+        <p>Interface intuitiva para cadastro de produtos e lotes. Controle total do seu inventário.</p>
+        {% if user.is_authenticated %}
+            <a href="{% url 'inventory:produto-create' %}" class="btn">Cadastrar Produto</a>
+        {% else %}
+            <a href="{% url 'inventory:register' %}" class="btn">Começar Agora</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if not user.is_authenticated %}
+<div style="text-align: center; margin-top: 2rem;">
+    <p style="font-size: 1.1rem; color: #64748b;">Faça login ou cadastre-se para acessar o sistema completo.</p>
+</div>
+{% endif %}
+{% endblock %}

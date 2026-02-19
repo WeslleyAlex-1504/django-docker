@@ -1,0 +1,454 @@
+{% extends "admin/base.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block title %}{% if cl.formset and cl.formset.errors %}{{ cl.formset.errors|pluralize }} error{{ cl.formset.errors|pluralize }} {% endif %}{% if cl.search_fields %}Search{% endif %}{% if cl.result_count == 1 %}{{ cl.opts.verbose_name }}{% else %}{{ cl.opts.verbose_name_plural }}{% endif %}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    {% for breadcrumb in breadcrumbs %}
+        {% if not forloop.last %} › <a href="{{ breadcrumb.url }}">{{ breadcrumb.title }}</a>
+        {% else %} › {{ breadcrumb.title }}{% endif %}
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="changelist-container">
+    <div class="changelist-header">
+        <h1>{{ cl.opts.verbose_name_plural|capfirst }}</h1>
+        <div class="changelist-actions">
+            {% if cl.search_fields %}
+            <div class="search-container">
+                <form method="get">
+                    <div class="search-input-group">
+                        <input type="search" name="{{ cl.search_var }}" value="{{ cl.query }}" placeholder="Buscar {{ cl.opts.verbose_name_plural }}..." class="search-input">
+                        <button type="submit" class="search-btn">🔍</button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+            <a href="{% url cl.opts|admin_urlname:'add' %}" class="add-btn">
+                <span class="add-icon">➕</span>
+                Adicionar {{ cl.opts.verbose_name }}
+            </a>
+        </div>
+    </div>
+
+    {% if cl.search_fields and cl.query %}
+    <div class="search-results">
+        <p>Resultados da busca por "<strong>{{ cl.query }}</strong>": {{ cl.result_count }} {{ cl.opts.verbose_name_plural }}</p>
+        <a href="{{ request.path }}" class="clear-search">Limpar busca</a>
+    </div>
+    {% endif %}
+
+    <div class="filters-and-table">
+        {% if cl.has_filters %}
+        <div class="filters-sidebar">
+            {% block filters %}
+            <h3>Filtros</h3>
+            {% for spec in cl.filter_specs %}
+            <div class="filter-group">
+                <h4>{{ spec.title }}</h4>
+                {{ spec|safe }}
+            </div>
+            {% endfor %}
+            {% endblock %}
+        </div>
+        {% endif %}
+
+        <div class="table-container">
+            {% block result_list %}
+            {% if cl.formset and cl.formset.errors %}
+            <div class="formset-errors">
+                <p class="errornote">
+                    {% blocktrans count cl.formset.errors|length as counter %}Please correct the error below.{% plural %}Please correct the errors below.{% endblocktrans %}
+                </p>
+                {{ cl.formset.non_form_errors }}
+            </div>
+            {% endif %}
+
+            <div class="results">
+                {% if cl.result_count %}
+                <table>
+                    <thead>
+                        <tr>
+                            {% for header in result_headers %}
+                            <th{% if header.sortable %} class="sortable {% if header.sorted %}sorted {{ header.sort_priority }}{% endif %}"{% endif %}>
+                                {% if header.sortable %}
+                                <a href="{{ header.url_primary }}">
+                                    {{ header.text }}
+                                    {% if header.sorted %}
+                                    {% if header.ascending %}↑{% else %}↓{% endif %}
+                                    {% endif %}
+                                </a>
+                                {% else %}
+                                {{ header.text }}
+                                {% endif %}
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr class="{% cycle 'row1' 'row2' %}">
+                            {% for item in result %}
+                            <td>{{ item }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="no-results">
+                    <div class="no-results-icon">📭</div>
+                    <h3>Nenhum {{ cl.opts.verbose_name }} encontrado</h3>
+                    <p>Não há {{ cl.opts.verbose_name_plural }} cadastrados ainda.</p>
+                    <a href="{% url cl.opts|admin_urlname:'add' %}" class="add-btn">Adicionar Primeiro {{ cl.opts.verbose_name }}</a>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if cl.result_count %}
+            {% block pagination %}
+            <div class="pagination">
+                {% if pagination_required %}
+                <div class="paginator">
+                    {% for page in page_range %}
+                    {% if page == '...' %}
+                    <span class="ellipsis">…</span>
+                    {% elif page == cl.page_num %}
+                    <span class="current-page">{{ page }}</span>
+                    {% else %}
+                    <a href="{% url cl.opts|admin_urlname:'changelist' %}?{{ page_param }}={{ page }}{% if cl.query %}&{{ cl.search_var }}={{ cl.query }}{% endif %}" class="page-link">{{ page }}</a>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="result-count">
+                    Mostrando {{ cl.start_index }} a {{ cl.end_index }} de {{ cl.result_count }} {{ cl.opts.verbose_name_plural }}
+                </div>
+            </div>
+            {% endblock %}
+            {% endif %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .changelist-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .changelist-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #10b981;
+    }
+
+    .changelist-header h1 {
+        color: #1e293b;
+        margin: 0;
+        font-size: 2rem;
+    }
+
+    .changelist-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .search-container {
+        position: relative;
+    }
+
+    .search-input-group {
+        display: flex;
+        align-items: center;
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: border-color 0.3s;
+    }
+
+    .search-input-group:focus-within {
+        border-color: #10b981;
+    }
+
+    .search-input {
+        border: none;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        flex: 1;
+        outline: none;
+    }
+
+    .search-btn {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .search-btn:hover {
+        background: #059669;
+    }
+
+    .add-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .add-btn:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .search-results {
+        background: #e0f2fe;
+        color: #0c4a6e;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #10b981;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .clear-search {
+        color: #10b981;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .clear-search:hover {
+        text-decoration: underline;
+    }
+
+    .filters-and-table {
+        display: flex;
+        gap: 2rem;
+    }
+
+    .filters-sidebar {
+        width: 250px;
+        flex-shrink: 0;
+    }
+
+    .filter-group {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .filter-group h4 {
+        margin: 0 0 1rem 0;
+        color: #374151;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .table-container {
+        flex: 1;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .results table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .results table thead th {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .results table thead th.sortable {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .results table thead th.sortable:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+    }
+
+    .results table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 0.9rem;
+    }
+
+    .results table tbody tr.row1 {
+        background: white;
+    }
+
+    .results table tbody tr.row2 {
+        background: #f8fafc;
+    }
+
+    .results table tbody tr:hover {
+        background: #f0fdf4;
+    }
+
+    .results table tbody td a {
+        color: #10b981;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .results table tbody td a:hover {
+        text-decoration: underline;
+    }
+
+    .results table tbody td a.deletelink {
+        color: #dc2626;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6b7280;
+    }
+
+    .no-results-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .no-results h3 {
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        background: #f8fafc;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .paginator {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .page-link, .current-page {
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s;
+    }
+
+    .page-link {
+        background: white;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+
+    .page-link:hover {
+        background: #10b981;
+        color: white;
+        border-color: #10b981;
+    }
+
+    .current-page {
+        background: #10b981;
+        color: white;
+        font-weight: 600;
+    }
+
+    .ellipsis {
+        color: #6b7280;
+        padding: 0.5rem;
+    }
+
+    .result-count {
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+
+    .formset-errors {
+        background: #fef2f2;
+        color: #dc2626;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        border-left: 4px solid #dc2626;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .filters-and-table {
+            flex-direction: column;
+        }
+
+        .filters-sidebar {
+            width: 100%;
+        }
+
+        .changelist-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .changelist-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .search-input-group {
+            width: 100%;
+        }
+
+        .results table {
+            font-size: 0.8rem;
+        }
+
+        .results table thead th,
+        .results table tbody td {
+            padding: 0.5rem;
+        }
+
+        .pagination {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,410 @@
+{% load i18n static %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:"en-us" }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %} | Fruteira Admin</title>
+    <link rel="stylesheet" href="{% static 'admin/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/widgets.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/login.css' %}">
+    <link rel="stylesheet" href="{% static 'admin/css/dashboard.css' %}">
+    {% block extrastyle %}{% endblock %}
+    <style>
+        /* Custom Admin Styles */
+        :root {
+            --primary-color: #10b981;
+            --primary-dark: #059669;
+            --secondary-color: #3b82f6;
+            --danger-color: #dc2626;
+            --warning-color: #d97706;
+            --success-color: #16a34a;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        /* Header improvements */
+        #header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #header a:link, #header a:visited {
+            color: white;
+            text-decoration: none;
+        }
+
+        #header a:hover {
+            color: var(--gray-100);
+        }
+
+        #branding h1 {
+            color: white;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        #user-tools {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+        }
+
+        /* Navigation improvements */
+        #nav-sidebar {
+            background: var(--gray-50);
+            border-right: 1px solid var(--gray-200);
+        }
+
+        #nav-sidebar .module h2 {
+            background: var(--primary-color);
+            color: white;
+            margin: 0;
+            padding: 1rem;
+            font-size: 1rem;
+            border-radius: 8px 8px 0 0;
+        }
+
+        #nav-sidebar .module ul {
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            margin-bottom: 1rem;
+        }
+
+        #nav-sidebar a:link, #nav-sidebar a:visited {
+            color: var(--gray-700);
+            padding: 0.75rem 1rem;
+            display: block;
+            border-bottom: 1px solid var(--gray-100);
+            transition: all 0.3s;
+        }
+
+        #nav-sidebar a:hover {
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Content area improvements */
+        #content {
+            background: white;
+            margin: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+
+        #content h1 {
+            color: var(--gray-800);
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Button improvements */
+        .button, input[type="submit"], input[type="button"], .submit-row input {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .button:hover, input[type="submit"]:hover, input[type="button"]:hover, .submit-row input:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .default {
+            background: var(--secondary-color) !important;
+        }
+
+        .default:hover {
+            background: #2563eb !important;
+        }
+
+        .deletelink {
+            background: var(--danger-color) !important;
+        }
+
+        .deletelink:hover {
+            background: #b91c1c !important;
+        }
+
+        /* Form improvements */
+        .form-row {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row label {
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-row input[type="text"],
+        .form-row input[type="password"],
+        .form-row input[type="email"],
+        .form-row select,
+        .form-row textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-row input[type="text"]:focus,
+        .form-row input[type="password"]:focus,
+        .form-row input[type="email"]:focus,
+        .form-row select:focus,
+        .form-row textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        /* Table improvements */
+        .results table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .results table thead th {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .results table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .results table tbody tr:nth-child(even) {
+            background: var(--gray-50);
+        }
+
+        .results table tbody tr:hover {
+            background: var(--gray-100);
+        }
+
+        /* Action buttons in tables */
+        .results table tbody td a {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+
+        .results table tbody td a:link {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .results table tbody td a:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .results table tbody td a.deletelink {
+            background: var(--danger-color);
+        }
+
+        .results table tbody td a.deletelink:hover {
+            background: #b91c1c;
+        }
+
+        /* Pagination */
+        .paginator {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .paginator a {
+            padding: 0.5rem 1rem;
+            margin: 0 0.25rem;
+            border-radius: 6px;
+            text-decoration: none;
+            background: var(--gray-100);
+            color: var(--gray-700);
+            transition: all 0.3s;
+        }
+
+        .paginator a:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .paginator .this-page {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+        }
+
+        /* Messages */
+        .messagelist {
+            margin-bottom: 2rem;
+        }
+
+        .messagelist li {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .messagelist li.success {
+            background: #dcfce7;
+            color: #166534;
+            border-left: 4px solid var(--success-color);
+        }
+
+        .messagelist li.error {
+            background: #fee2e2;
+            color: #dc2626;
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .messagelist li.warning {
+            background: #fef3c7;
+            color: #d97706;
+            border-left: 4px solid var(--warning-color);
+        }
+
+        .messagelist li.info {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border-left: 4px solid var(--secondary-color);
+        }
+
+        /* Footer */
+        #footer {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
+            border-radius: 8px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            #header {
+                padding: 1rem;
+            }
+
+            #content {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+
+            #nav-sidebar {
+                position: static;
+                width: 100%;
+                margin-bottom: 1rem;
+            }
+
+            .results table {
+                font-size: 0.875rem;
+            }
+
+            .results table thead th,
+            .results table tbody td {
+                padding: 0.5rem;
+            }
+        }
+    </style>
+    {% block extrahead %}{% endblock %}
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+    <!-- Header -->
+    <div id="header">
+        <div id="branding">
+            <h1 id="site-name"><a href="{% url 'admin:index' %}">🍎 Fruteira Admin</a></h1>
+        </div>
+        <div id="user-tools">
+            {% block usertools %}
+            {% if user.is_authenticated %}
+                <strong>{% firstof user.get_full_name user.get_username %}</strong> |
+                <a href="{% url 'admin:password_change' %}">Alterar senha</a> |
+                <a href="{% url 'admin:logout' %}">Sair</a>
+            {% endif %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div id="container">
+        {% if nav_sidebar %}
+        <div id="nav-sidebar">
+            {% block nav-sidebar %}
+            {% include "admin/nav_sidebar.html" %}
+            {% endblock %}
+        </div>
+        {% endif %}
+
+        <div id="content" class="{% block coltype %}colM{% endblock %}">
+            {% block breadcrumbs %}
+            <div class="breadcrumbs">
+                <a href="{% url 'admin:index' %}">Início</a>
+                {% for breadcrumb in breadcrumbs %}
+                    {% if not forloop.last %} › <a href="{{ breadcrumb.url }}">{{ breadcrumb.title }}</a>
+                    {% else %} › {{ breadcrumb.title }}{% endif %}
+                {% endfor %}
+            </div>
+            {% endblock %}
+
+            {% block messages %}
+            {% if messages %}
+                <ul class="messagelist">
+                    {% for message in messages %}
+                        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% endblock %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div id="footer">
+        <p>Sistema de Controle de Estoque - Fruteira | Desenvolvido com Django</p>
+    </div>
+
+    {% block footer %}{% endblock %}
+</body>
+</html>

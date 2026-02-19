@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastro - Fruteira{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 4rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <h2 style="text-align: center; margin-bottom: 2rem; color: #1e293b;">Criar Conta</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 1rem;">
+            <label for="{{ form.username.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Usuário:</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+                <div style="color: #dc2626; font-size: 0.875rem; margin-top: 0.25rem;">
+                    {% for error in form.username.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+            <label for="{{ form.password1.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Senha:</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}
+                <div style="color: #dc2626; font-size: 0.875rem; margin-top: 0.25rem;">
+                    {% for error in form.password1.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <label for="{{ form.password2.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Confirmar Senha:</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+                <div style="color: #dc2626; font-size: 0.875rem; margin-top: 0.25rem;">
+                    {% for error in form.password2.errors %}{{ error }}{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%; padding: 0.75rem;">Cadastrar</button>
+    </form>
+
+    <div style="text-align: center; margin-top: 1.5rem;">
+        <p style="color: #64748b;">Já tem conta? <a href="{% url 'login' %}" style="color: #10b981; text-decoration: none;">Faça login</a></p>
+    </div>
+</div>
+
+<style>
+    input[type="text"], input[type="password"] {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+    input[type="text"]:focus, input[type="password"]:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+</style>
+{% endblock %}

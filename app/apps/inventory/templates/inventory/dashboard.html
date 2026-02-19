@@ -1,71 +1,542 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Estoque</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; background: #f8fafc; color: #0f172a; }
-        .container { max-width: 1080px; margin: 0 auto; }
-        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-        .card { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-        .actions { margin-bottom: 1rem; }
-        .btn { background: #2563eb; color: white; padding: .6rem 1rem; border-radius: 8px; text-decoration: none; margin-right: .5rem; }
-        table { width: 100%; border-collapse: collapse; background: #fff; }
-        th, td { border: 1px solid #e2e8f0; padding: .6rem; text-align: left; }
-        th { background: #e2e8f0; }
-        .muted { color: #64748b; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>Cadastro, Estoque e Vencimento</h1>
-    <p class="muted">Painel inicial para cadastro de produtos e monitoramento de lotes.</p>
+{% extends 'base.html' %}
 
-    <div class="cards">
-        <div class="card"><strong>Produtos cadastrados</strong><br>{{ produtos|length }}</div>
-        <div class="card"><strong>Total em estoque</strong><br>{{ total_itens }} unidades</div>
-        <div class="card"><strong>Lotes vencidos</strong><br>{{ lotes_vencidos|length }}</div>
-    </div>
+{% block title %}Dashboard - Controle de Estoque{% endblock %}
 
-    <div class="actions">
-        <a class="btn" href="{% url 'inventory:produto-create' %}?next=/">Novo produto</a>
-        <a class="btn" href="{% url 'inventory:lote-create' %}?next=/">Novo lote</a>
-        <a class="btn" href="/admin/" target="_blank" rel="noreferrer">Admin</a>
-    </div>
-
-    <h2>Produtos</h2>
-    <table>
-        <thead><tr><th>Nome</th><th>SKU</th><th>Quantidade total</th></tr></thead>
-        <tbody>
-            {% for produto in produtos %}
-            <tr>
-                <td>{{ produto.nome }}</td>
-                <td>{{ produto.sku }}</td>
-                <td>{{ produto.quantidade_total }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="3">Nenhum produto cadastrado.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <h2>Lotes vencendo em até 30 dias</h2>
-    <table>
-        <thead><tr><th>Produto</th><th>Lote</th><th>Qtd.</th><th>Vencimento</th></tr></thead>
-        <tbody>
-            {% for lote in lotes_a_vencer %}
-            <tr>
-                <td>{{ lote.produto.nome }}</td>
-                <td>{{ lote.codigo_lote }}</td>
-                <td>{{ lote.quantidade }}</td>
-                <td>{{ lote.data_vencimento }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4">Nenhum lote próximo do vencimento.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% block content %}
+<div class="dashboard-header">
+    <h1>📊 Painel de Controle de Estoque</h1>
+    <p class="dashboard-subtitle">Gerencie seus produtos e monitore vencimentos</p>
 </div>
-</body>
-</html>
+
+<!-- Cards de Estatísticas -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-content">
+            <div class="stat-number">{{ produtos|length }}</div>
+            <div class="stat-label">Produtos Cadastrados</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-content">
+            <div class="stat-number">{{ total_itens }}</div>
+            <div class="stat-label">Itens em Estoque</div>
+        </div>
+    </div>
+    <div class="stat-card alert">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-content">
+            <div class="stat-number">{{ lotes_vencidos|length }}</div>
+            <div class="stat-label">Lotes Vencidos</div>
+        </div>
+    </div>
+    <div class="stat-card warning">
+        <div class="stat-icon">⏰</div>
+        <div class="stat-content">
+            <div class="stat-number">{{ lotes_a_vencer|length }}</div>
+            <div class="stat-label">Vencem em 30 dias</div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="quick-actions">
+    <button type="button" class="action-btn primary" onclick="openProductModal()">
+        <span class="action-icon">➕</span>
+        Novo Produto
+    </button>
+    <button type="button" class="action-btn secondary" onclick="openBatchModal()">
+        <span class="action-icon">📦</span>
+        Novo Lote
+    </button>
+    <a href="/admin/" target="_blank" class="action-btn admin">
+        <span class="action-icon">⚙️</span>
+        Administração
+    </a>
+</div>
+
+<!-- Seção de Produtos -->
+<div class="section">
+    <div class="section-header">
+        <h2>📋 Produtos</h2>
+        <div class="section-actions">
+            <input type="text" id="productSearch" placeholder="Buscar produtos..." class="search-input">
+        </div>
+    </div>
+    <div class="table-container">
+        <table class="data-table" id="productsTable">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>SKU</th>
+                    <th>Descrição</th>
+                    <th>Status</th>
+                    <th>Quantidade Total</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produto in produtos %}
+                <tr>
+                    <td>{{ produto.nome }}</td>
+                    <td><code>{{ produto.sku }}</code></td>
+                    <td>{{ produto.descricao|truncatechars:50|default:"-" }}</td>
+                    <td>
+                        <span class="status-badge {% if produto.ativo %}active{% else %}inactive{% endif %}">
+                            {% if produto.ativo %}Ativo{% else %}Inativo{% endif %}
+                        </span>
+                    </td>
+                    <td><strong>{{ produto.quantidade_total }}</strong></td>
+                    <td class="actions-cell">
+                        <button class="btn-icon edit-btn" onclick="openProductModal({{ produto.id }}, '{{ produto.nome }}', '{{ produto.sku }}', '{{ produto.descricao }}', {{ produto.ativo|lower }})" title="Editar">
+                            ✏️
+                        </button>
+                        <button class="btn-icon delete-btn" onclick="confirmDelete('produto', {{ produto.id }}, '{{ produto.nome }}')" title="Excluir">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <div class="empty-content">
+                            <div class="empty-icon">📦</div>
+                            <p>Nenhum produto cadastrado ainda.</p>
+                            <a href="{% url 'inventory:produto-create' %}" class="btn">Cadastrar Primeiro Produto</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Seção de Lotes Próximos do Vencimento -->
+<div class="section">
+    <div class="section-header">
+        <h2>⏰ Lotes Próximos do Vencimento</h2>
+    </div>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Código do Lote</th>
+                    <th>Quantidade</th>
+                    <th>Data de Vencimento</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lote in lotes_a_vencer %}
+                <tr class="{% if lote.vencido %}expired{% elif lote.data_vencimento <= hoje|date:'Y-m-d'|date %}expiring-soon{% endif %}">
+                    <td>{{ lote.produto.nome }}</td>
+                    <td><code>{{ lote.codigo_lote }}</code></td>
+                    <td>{{ lote.quantidade }}</td>
+                    <td>{{ lote.data_vencimento|date:"d/m/Y" }}</td>
+                    <td>
+                        {% if lote.vencido %}
+                            <span class="status-badge expired">Vencido</span>
+                        {% elif lote.data_vencimento <= hoje|date:'Y-m-d'|date %}
+                            <span class="status-badge expiring-soon">Vence Hoje</span>
+                        {% else %}
+                            <span class="status-badge warning">Próximo</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions-cell">
+                        <button class="btn-icon edit-btn" onclick="openBatchModal({{ lote.id }}, '{{ lote.produto.id }}', '{{ lote.codigo_lote }}', {{ lote.quantidade }}, '{{ lote.data_vencimento|date:'Y-m-d' }}')" title="Editar">
+                            ✏️
+                        </button>
+                        <button class="btn-icon delete-btn" onclick="confirmDelete('lote', {{ lote.id }}, '{{ lote.codigo_lote }}')" title="Excluir">
+                            🗑️
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <div class="empty-content">
+                            <div class="empty-icon">✅</div>
+                            <p>Todos os lotes estão em dia!</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal de Edição de Produto -->
+<div id="productModal" class="modal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3 id="productModalTitle">Novo Produto</h3>
+            <span class="modal-close" onclick="closeModal('productModal')">&times;</span>
+        </div>
+        <form id="productForm" method="post" onsubmit="return handleProductSubmit(event)">
+            {% csrf_token %}
+            <input type="hidden" id="productId" name="product_id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="productName">Nome do Produto:</label>
+                    <input type="text" id="productName" name="nome" required
+                           placeholder="Ex: Maçã Gala, Banana Prata, etc."
+                           minlength="2" maxlength="120">
+                    <small class="form-help">Mínimo 2 caracteres, não pode ser apenas números</small>
+                </div>
+                <div class="form-group">
+                    <label for="productSku">SKU (Gerado Automaticamente):</label>
+                    <input type="text" id="productSku" name="sku_display" readonly
+                           placeholder="Será gerado automaticamente (001, 002, etc.)"
+                           class="readonly-field">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="productDescription">Descrição:</label>
+                <textarea id="productDescription" name="descricao" rows="4"
+                          placeholder="Descrição opcional do produto, características, origem, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="productActive" name="ativo" checked>
+                    <span class="checkmark"></span>
+                    Produto ativo (disponível para vendas)
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn secondary" onclick="closeModal('productModal')">Cancelar</button>
+                <button type="submit" class="btn primary" id="productSubmitBtn">
+                    <span id="productSubmitText">Cadastrar Produto</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Edição de Lote -->
+<div id="batchModal" class="modal">
+    <div class="modal-content large">
+        <div class="modal-header">
+            <h3 id="batchModalTitle">Novo Lote</h3>
+            <span class="modal-close" onclick="closeModal('batchModal')">&times;</span>
+        </div>
+        <form id="batchForm" method="post" onsubmit="return handleBatchSubmit(event)">
+            {% csrf_token %}
+            <input type="hidden" id="batchId" name="batch_id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="batchProduct">Produto:</label>
+                    <select id="batchProduct" name="produto" required>
+                        <option value="">Selecione um produto...</option>
+                        {% for produto in produtos %}
+                        <option value="{{ produto.id }}">{{ produto.nome }} ({{ produto.sku }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="batchCode">Código do Lote (Gerado Automaticamente):</label>
+                    <input type="text" id="batchCode" name="codigo_display" readonly
+                           placeholder="Será gerado automaticamente"
+                           class="readonly-field">
+                </div>
+            </div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="batchQuantity">Quantidade:</label>
+                    <input type="number" id="batchQuantity" name="quantidade" min="1" required
+                           placeholder="Ex: 100, 500, 1000">
+                </div>
+                <div class="form-group">
+                    <label for="batchExpiry">Data de Vencimento:</label>
+                    <input type="date" id="batchExpiry" name="data_vencimento" required>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn secondary" onclick="closeModal('batchModal')">Cancelar</button>
+                <button type="submit" class="btn primary" id="batchSubmitBtn">
+                    <span id="batchSubmitText">Cadastrar Lote</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Exclusão -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content small">
+        <div class="modal-header">
+            <h3>Confirmar Exclusão</h3>
+            <span class="modal-close" onclick="closeModal('deleteModal')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="delete-warning">
+                <div class="warning-icon">⚠️</div>
+                <p id="deleteMessage"></p>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn secondary" onclick="closeModal('deleteModal')">Cancelar</button>
+            <button type="button" class="btn danger" id="confirmDeleteBtn" onclick="executeDelete()">Excluir</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Funcionalidades do Dashboard
+let deleteType = '';
+let deleteId = '';
+
+function openProductModal(id = null, nome = '', sku = '', descricao = '', ativo = true) {
+    const modal = document.getElementById('productModal');
+    const form = document.getElementById('productForm');
+    const title = document.getElementById('productModalTitle');
+    const submitBtn = document.getElementById('productSubmitBtn');
+    const submitText = document.getElementById('productSubmitText');
+
+    if (id) {
+        // Modo edição
+        title.textContent = 'Editar Produto';
+        submitText.textContent = 'Salvar Alterações';
+        form.action = `/estoque/produtos/${id}/editar/`;
+    } else {
+        // Modo criação
+        title.textContent = 'Novo Produto';
+        submitText.textContent = 'Cadastrar Produto';
+        form.action = `/estoque/produtos/novo/`;
+    }
+
+    document.getElementById('productId').value = id || '';
+    document.getElementById('productName').value = nome;
+    document.getElementById('productSku').value = sku;
+    document.getElementById('productDescription').value = descricao;
+    document.getElementById('productActive').checked = ativo;
+
+    modal.style.display = 'block';
+}
+
+function openBatchModal(id = null, produtoId = '', codigo = '', quantidade = '', vencimento = '') {
+    const modal = document.getElementById('batchModal');
+    const form = document.getElementById('batchForm');
+    const title = document.getElementById('batchModalTitle');
+    const submitBtn = document.getElementById('batchSubmitBtn');
+    const submitText = document.getElementById('batchSubmitText');
+
+    if (id) {
+        // Modo edição
+        title.textContent = 'Editar Lote';
+        submitText.textContent = 'Salvar Alterações';
+        form.action = `/estoque/lotes/${id}/editar/`;
+    } else {
+        // Modo criação
+        title.textContent = 'Novo Lote';
+        submitText.textContent = 'Cadastrar Lote';
+        form.action = `/estoque/lotes/novo/`;
+    }
+
+    document.getElementById('batchId').value = id || '';
+    document.getElementById('batchProduct').value = produtoId;
+    document.getElementById('batchCode').value = codigo;
+    document.getElementById('batchQuantity').value = quantidade;
+    document.getElementById('batchExpiry').value = vencimento;
+
+    modal.style.display = 'block';
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function confirmDelete(type, id, name) {
+    deleteType = type;
+    deleteId = id;
+    const message = type === 'produto'
+        ? `Tem certeza que deseja excluir o produto "${name}"? Todos os lotes associados serão removidos permanentemente.`
+        : `Tem certeza que deseja excluir o lote "${name}"? Esta ação não pode ser desfeita.`;
+
+    document.getElementById('deleteMessage').textContent = message;
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function executeDelete() {
+    const url = deleteType === 'produto'
+        ? `/estoque/produtos/${deleteId}/deletar-ajax/`
+        : `/estoque/lotes/${deleteId}/deletar-ajax/`;
+
+    // Desabilitar botão para evitar cliques duplos
+    const btn = document.getElementById('confirmDeleteBtn');
+    btn.disabled = true;
+    btn.textContent = 'Excluindo...';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            closeModal('deleteModal');
+            // Recarregar a página para atualizar os dados
+            location.reload();
+        } else {
+            throw new Error(data.message || 'Erro desconhecido');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao excluir o item: ' + error.message);
+        // Reabilitar botão em caso de erro
+        btn.disabled = false;
+        btn.textContent = 'Excluir';
+    });
+}
+
+function handleProductSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitBtn = document.getElementById('productSubmitBtn');
+    const originalText = submitBtn.textContent;
+
+    // Desabilitar botão durante o envio
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Salvando...';
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            closeModal('productModal');
+            location.reload();
+        } else {
+            return response.text().then(text => {
+                throw new Error(text);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar produto: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+
+    return false;
+}
+
+function handleBatchSubmit(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const submitBtn = document.getElementById('batchSubmitBtn');
+    const originalText = submitBtn.textContent;
+
+    // Desabilitar botão durante o envio
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Salvando...';
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            closeModal('batchModal');
+            location.reload();
+        } else {
+            return response.text().then(text => {
+                throw new Error(text);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar lote: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+
+    return false;
+}
+
+function confirmDelete(type, id, name) {
+    deleteType = type;
+    deleteId = id;
+    const message = type === 'produto'
+        ? `Tem certeza que deseja excluir o produto "${name}"? Todos os lotes associados serão removidos.`
+        : `Tem certeza que deseja excluir o lote "${name}"?`;
+
+    document.getElementById('deleteMessage').textContent = message;
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function executeDelete() {
+    const url = deleteType === 'produto'
+        ? `/estoque/produtos/${deleteId}/deletar-ajax/`
+        : `/estoque/lotes/${deleteId}/deletar-ajax/`;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeModal('deleteModal');
+            location.reload();
+        } else {
+            alert('Erro ao excluir: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao excluir o item.');
+    });
+}
+
+// Busca de produtos
+document.getElementById('productSearch').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#productsTable tbody tr');
+
+    rows.forEach(row => {
+        if (row.classList.contains('empty-state')) return;
+
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Fechar modal ao clicar fora
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

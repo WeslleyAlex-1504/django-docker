@@ -1,0 +1,217 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% trans 'Log in' %}{% endblock %}
+
+{% block extrastyle %}
+<style>
+    /* Login page specific styles */
+    body.login {
+        background: linear-gradient(135deg, #10b981, #059669);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #header {
+        display: none;
+    }
+
+    #container {
+        width: 100%;
+        max-width: 400px;
+        margin: 0;
+    }
+
+    #content {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        padding: 2.5rem;
+        margin: 0;
+        border: none;
+        text-align: center;
+    }
+
+    #content h1 {
+        color: #1f2937;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        border: none;
+        padding: 0;
+    }
+
+    .login-subtitle {
+        color: #6b7280;
+        margin-bottom: 2rem;
+        font-size: 1rem;
+    }
+
+    .form-row {
+        margin-bottom: 1.5rem;
+        text-align: left;
+    }
+
+    .form-row label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.9rem;
+    }
+
+    .form-row input[type="text"],
+    .form-row input[type="password"] {
+        width: 100%;
+        padding: 0.875rem 1rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        box-sizing: border-box;
+    }
+
+    .form-row input[type="text"]:focus,
+    .form-row input[type="password"]:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    }
+
+    .submit-row {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .submit-row input[type="submit"] {
+        width: 100%;
+        padding: 0.875rem 2rem;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .submit-row input[type="submit"]:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+
+    .errornote {
+        background: #fef2f2;
+        color: #dc2626;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #dc2626;
+        font-size: 0.9rem;
+    }
+
+    .back-link {
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .back-link a {
+        color: #10b981;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s;
+    }
+
+    .back-link a:hover {
+        color: #059669;
+        text-decoration: underline;
+    }
+
+    /* Logo/branding */
+    .login-logo {
+        margin-bottom: 1rem;
+    }
+
+    .login-logo-text {
+        font-size: 2.5rem;
+        color: #10b981;
+        font-weight: bold;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+        #content {
+            padding: 2rem 1.5rem;
+            margin: 1rem;
+        }
+
+        #content h1 {
+            font-size: 1.75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block bodyclass %}login{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+
+{% block content %}
+<div class="login-logo">
+    <div class="login-logo-text">🍎 Fruteira</div>
+</div>
+
+<h1>{% trans 'Log in' %}</h1>
+<p class="login-subtitle">Acesse o painel administrativo</p>
+
+{% if form.errors and not form.non_field_errors %}
+<p class="errornote">
+    {% if form.errors.items|length == 1 %}{% trans "Please correct the error below." %}{% else %}{% trans "Please correct the errors below." %}{% endif %}
+</p>
+{% endif %}
+
+{% if form.non_field_errors %}
+{% for error in form.non_field_errors %}
+<p class="errornote">
+    {{ error }}
+</p>
+{% endfor %}
+{% endif %}
+
+<div id="content-main">
+    <form action="{{ app_path }}" method="post" id="login-form">
+        {% csrf_token %}
+        <div class="form-row">
+            {{ form.username.label_tag }}
+            {{ form.username }}
+            {% if form.username.errors %}
+                {% for error in form.username.errors %}
+                    <p class="errornote">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="form-row">
+            {{ form.password.label_tag }}
+            {{ form.password }}
+            {% if form.password.errors %}
+                {% for error in form.password.errors %}
+                    <p class="errornote">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="submit-row">
+            <input type="submit" value="{% trans 'Log in' %}">
+        </div>
+    </form>
+</div>
+
+<div class="back-link">
+    <a href="{% url 'home' %}">← Voltar ao site</a>
+</div>
+{% endblock %}

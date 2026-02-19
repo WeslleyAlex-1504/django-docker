@@ -133,3 +133,21 @@ docker-compose ps
 ```bash
 docker-compose down -v
 ```
+
+
+
+
+
+
+
+
+
+- Criar e configurar a imagem Docker da aplicação
+- Configurar o banco de dados PostgreSQL
+- Configurar o ambiente Python do projeto
+- Estruturar a aplicação  com Django
+- Integrar a aplicação ao Sentry para monitoramento de erros
+
+
+Faça um projeto de cadastro/estoque de fruteira
+Cadastro de frutas, estoque e vencimento

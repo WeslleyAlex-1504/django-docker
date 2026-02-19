@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão - Lote{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 4rem auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+    <div style="font-size: 4rem; margin-bottom: 1rem; color: #dc2626;">⚠️</div>
+    <h2 style="color: #dc2626; margin-bottom: 1rem;">Confirmar Exclusão</h2>
+    <p style="color: #64748b; margin-bottom: 2rem;">
+        Tem certeza que deseja excluir o lote <strong>"{{ object.codigo_lote }}"</strong><br>
+        do produto <strong>"{{ object.produto.nome }}"</strong>?<br>
+        Esta ação não pode ser desfeita.
+    </p>
+
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="{% url 'inventory:dashboard' %}" class="btn" style="background: #6b7280;">Cancelar</a>
+        <form method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn" style="background: #dc2626;" onclick="return confirm('Tem certeza que deseja excluir este lote?')">Excluir Lote</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

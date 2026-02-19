@@ -1,0 +1,382 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% trans 'Site administration' %}{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="dashboard-header">
+        <h1>🍎 Painel Administrativo - Fruteira</h1>
+        <p class="dashboard-subtitle">Gerencie produtos, lotes e usuários do sistema</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-content">
+                <div class="stat-number">{{ product_count|default:0 }}</div>
+                <div class="stat-label">Produtos</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-content">
+                <div class="stat-number">{{ lote_count|default:0 }}</div>
+                <div class="stat-label">Lotes</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+                <div class="stat-number">{{ user_count|default:0 }}</div>
+                <div class="stat-label">Usuários</div>
+            </div>
+        </div>
+        <div class="stat-card alert">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-content">
+                <div class="stat-number">{{ vencidos_count|default:0 }}</div>
+                <div class="stat-label">Lotes Vencidos</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <a href="{% url 'admin:inventory_produto_add' %}" class="action-btn primary">
+            <span class="action-icon">➕</span>
+            Adicionar Produto
+        </a>
+        <a href="{% url 'admin:inventory_loteestoque_add' %}" class="action-btn secondary">
+            <span class="action-icon">📦</span>
+            Adicionar Lote
+        </a>
+        <a href="{% url 'admin:auth_user_add' %}" class="action-btn success">
+            <span class="action-icon">👤</span>
+            Adicionar Usuário
+        </a>
+        <a href="{% url 'inventory:dashboard' %}" class="action-btn info" target="_blank">
+            <span class="action-icon">📱</span>
+            Ver Dashboard Público
+        </a>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="recent-activity">
+        <h2>Atividades Recentes</h2>
+        <div class="activity-list">
+            {% if recent_products %}
+            <div class="activity-item">
+                <div class="activity-icon">📦</div>
+                <div class="activity-content">
+                    <h4>Produtos Recentes</h4>
+                    <ul>
+                        {% for product in recent_products %}
+                        <li><a href="{% url 'admin:inventory_produto_change' product.pk %}">{{ product.nome }}</a> - Criado em {{ product.criado_em|date:"d/m/Y" }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if recent_lotes %}
+            <div class="activity-item">
+                <div class="activity-icon">📊</div>
+                <div class="activity-content">
+                    <h4>Lotes Recentes</h4>
+                    <ul>
+                        {% for lote in recent_lotes %}
+                        <li><a href="{% url 'admin:inventory_loteestoque_change' lote.pk %}">{{ lote.produto.nome }} - Lote {{ lote.codigo_lote }}</a> - {{ lote.quantidade }} unidades</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- App List -->
+    <div class="app-list">
+        <h2>Aplicativos</h2>
+        <div class="app-grid">
+            {% for app in app_list %}
+            <div class="app-card">
+                <h3>{{ app.name }}</h3>
+                <ul>
+                    {% for model in app.models %}
+                    <li>
+                        <a href="{% url model.admin_url %}">{{ model.name }}</a>
+                        {% if model.add_url %}
+                        <a href="{% url model.add_url %}" class="addlink">Adicionar</a>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .admin-dashboard {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .dashboard-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-header h1 {
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+
+    .dashboard-subtitle {
+        color: #6b7280;
+        font-size: 1.1rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.3s;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stat-card.alert {
+        border-left: 4px solid #dc2626;
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        color: #6b7280;
+        font-size: 0.9rem;
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .action-btn.primary {
+        background: #10b981;
+        color: white;
+    }
+
+    .action-btn.primary:hover {
+        background: #059669;
+        transform: translateY(-2px);
+    }
+
+    .action-btn.secondary {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .action-btn.secondary:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+    }
+
+    .action-btn.success {
+        background: #16a34a;
+        color: white;
+    }
+
+    .action-btn.success:hover {
+        background: #15803d;
+        transform: translateY(-2px);
+    }
+
+    .action-btn.info {
+        background: #06b6d4;
+        color: white;
+    }
+
+    .action-btn.info:hover {
+        background: #0891b2;
+        transform: translateY(-2px);
+    }
+
+    .recent-activity, .app-list {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .recent-activity h2, .app-list h2 {
+        color: #1e293b;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #10b981;
+        padding-bottom: 0.5rem;
+    }
+
+    .activity-list {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+    }
+
+    .activity-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .activity-content h4 {
+        margin: 0 0 0.5rem 0;
+        color: #374151;
+    }
+
+    .activity-content ul {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .activity-content li {
+        margin-bottom: 0.5rem;
+        color: #6b7280;
+    }
+
+    .activity-content a {
+        color: #10b981;
+        text-decoration: none;
+    }
+
+    .activity-content a:hover {
+        text-decoration: underline;
+    }
+
+    .app-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .app-card {
+        background: #f8fafc;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .app-card h3 {
+        margin: 0 0 1rem 0;
+        color: #1e293b;
+        font-size: 1.25rem;
+    }
+
+    .app-card ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .app-card li {
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .app-card a {
+        color: #10b981;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .app-card a:hover {
+        text-decoration: underline;
+    }
+
+    .app-card .addlink {
+        background: #10b981;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        text-decoration: none;
+    }
+
+    .app-card .addlink:hover {
+        background: #059669;
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-actions {
+            flex-direction: column;
+        }
+
+        .action-btn {
+            justify-content: center;
+        }
+
+        .app-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
