@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruteira - Estoque</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background: #f3f4f6; }
+        .wrap { max-width: 1000px; margin: 0 auto; }
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; }
+        .card { background: white; padding: 1rem; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background: #f9fafb; }
+        form { display: flex; gap: 0.5rem; }
+        input, select, button { padding: 0.4rem; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>Controle de Estoque da Fruteira</h1>
+    <div class="cards">
+        <div class="card"><b>Frutas cadastradas</b><br>{{ total_frutas }}</div>
+        <div class="card"><b>Unidades em estoque</b><br>{{ total_estoque }}</div>
+        <div class="card"><b>Frutas vencidas</b><br>{{ vencidas }}</div>
+    </div>
+
+    {% for message in messages %}
+        <p>{{ message }}</p>
+    {% endfor %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nome</th><th>Tipo</th><th>Validade</th><th>Estoque</th><th>Status</th><th>Movimentar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fruta in frutas %}
+                <tr>
+                    <td>{{ fruta.nome }}</td>
+                    <td>{{ fruta.get_tipo_display }}</td>
+                    <td>{{ fruta.data_validade }}</td>
+                    <td>{{ fruta.quantidade_estoque }}</td>
+                    <td>{{ fruta.get_status_display }}</td>
+                    <td>
+                        <form method="post" action="{% url 'estoque:movimentar-estoque' fruta.id %}">
+                            {% csrf_token %}
+                            <select name="acao">
+                                <option value="entrada">Entrada</option>
+                                <option value="saida">Saída</option>
+                            </select>
+                            <input name="quantidade" type="number" min="1" required>
+                            <button type="submit">OK</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6">Nenhuma fruta cadastrada. Cadastre no <a href="/admin/">admin</a>.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
