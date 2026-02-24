@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
 from django.shortcuts import redirect, get_object_or_404
 from django.utils import timezone
 from django.views.generic import CreateView, TemplateView, UpdateView, DeleteView
@@ -33,6 +33,54 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             'lotes_vencidos': lotes.filter(data_vencimento__lt=hoje),
             'lotes_a_vencer': lotes.filter(data_vencimento__gte=hoje, data_vencimento__lte=hoje + timedelta(days=30)),
             'total_itens': lotes.aggregate(total=Sum('quantidade')).get('total') or 0,
+        })
+        return context
+
+
+class AdminView(LoginRequiredMixin, TemplateView):
+    template_name = 'inventory/admin.html'
+    login_url = '/accounts/login/'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        hoje = timezone.localdate()
+
+        produtos = Produto.objects.prefetch_related('lotes').all()
+        lotes = LoteEstoque.objects.select_related('produto').all()
+
+        # Estatísticas gerais
+        total_produtos = produtos.count()
+        produtos_ativos = produtos.filter(ativo=True).count()
+        produtos_inativos = produtos.filter(ativo=False).count()
+        
+        total_itens = lotes.aggregate(total=Sum('quantidade')).get('total') or 0
+        total_lotes = lotes.count()
+        
+        # Lotes por status
+        lotes_vencidos = lotes.filter(data_vencimento__lt=hoje)
+        lotes_a_vencer = lotes.filter(
+            data_vencimento__gte=hoje, 
+            data_vencimento__lte=hoje + timedelta(days=30)
+        )
+        lotes_validos = lotes.filter(data_vencimento__gt=hoje + timedelta(days=30))
+
+        # Informações adicionais
+        produto_mais_estocado = produtos.annotate(
+            total_qty=Sum('lotes__quantidade')
+        ).order_by('-total_qty').first()
+
+        context.update({
+            'total_produtos': total_produtos,
+            'produtos_ativos': produtos_ativos,
+            'produtos_inativos': produtos_inativos,
+            'total_itens': total_itens,
+            'total_lotes': total_lotes,
+            'lotes_vencidos': lotes_vencidos,
+            'lotes_a_vencer': lotes_a_vencer,
+            'lotes_validos': lotes_validos,
+            'produtos': produtos,
+            'produto_mais_estocado': produto_mais_estocado,
+            'hoje': hoje,
         })
         return context
 
@@ -114,6 +162,7 @@ class LoteDeleteView(LoginRequiredMixin, DeleteView):
         return super().delete(request, *args, **kwargs)
 
 
+@method_decorator(require_POST, name='dispatch')
 @method_decorator(require_POST, name='dispatch')
 class ProdutoDeleteAjaxView(LoginRequiredMixin, DeleteView):
     model = Produto

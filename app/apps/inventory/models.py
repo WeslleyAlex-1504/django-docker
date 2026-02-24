@@ -13,6 +13,8 @@ class Produto(models.Model):
 
     class Meta:
         ordering = ['nome']
+        verbose_name = 'Produto'
+        verbose_name_plural = 'Produtos'
 
     def __str__(self):
         return f'{self.nome} ({self.sku})'
@@ -20,6 +22,16 @@ class Produto(models.Model):
     @property
     def quantidade_total(self):
         return sum(lote.quantidade for lote in self.lotes.all())
+
+    @property
+    def total_lotes(self):
+        """Retorna o número total de lotes do produto"""
+        return self.lotes.count()
+
+    @property
+    def status(self):
+        """Retorna o status visual do produto"""
+        return 'Ativo' if self.ativo else 'Inativo'
 
 
 class LoteEstoque(models.Model):
@@ -32,6 +44,8 @@ class LoteEstoque(models.Model):
     class Meta:
         ordering = ['data_vencimento']
         unique_together = ('produto', 'codigo_lote')
+        verbose_name = 'Lote de Estoque'
+        verbose_name_plural = 'Lotes de Estoque'
 
     def __str__(self):
         return f'{self.produto.nome} - lote {self.codigo_lote}'
@@ -39,6 +53,27 @@ class LoteEstoque(models.Model):
     @property
     def vencido(self):
         return self.data_vencimento < timezone.localdate()
+
+    @property
+    def dias_para_vencer(self):
+        """Calcula dias até o vencimento (negativo se vencido)"""
+        hoje = timezone.localdate()
+        diferenca = (self.data_vencimento - hoje).days
+        return diferenca
+
+    @property
+    def status_vencimento(self):
+        """Retorna o status de vencimento do lote"""
+        if self.vencido:
+            return 'Vencido'
+        elif self.dias_para_vencer <= 0:
+            return 'Vence hoje'
+        elif self.dias_para_vencer <= 7:
+            return 'Vence em breve'
+        elif self.dias_para_vencer <= 30:
+            return 'Próximo a vencer'
+        else:
+            return 'Válido'
 
 
 @receiver(pre_save, sender=Produto)

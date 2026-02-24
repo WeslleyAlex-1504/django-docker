@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    DashboardView, ProdutoCreateView, LoteCreateView, RegisterView, HomeView,
+    DashboardView, AdminView, ProdutoCreateView, LoteCreateView, RegisterView, HomeView,
     ProdutoUpdateView, ProdutoDeleteView, LoteUpdateView, LoteDeleteView,
     ProdutoDeleteAjaxView, LoteDeleteAjaxView
 )
@@ -9,6 +9,7 @@ app_name = 'inventory'
 
 urlpatterns = [
     path('', DashboardView.as_view(), name='dashboard'),
+    path('admin/', AdminView.as_view(), name='admin'),
     path('produtos/novo/', ProdutoCreateView.as_view(), name='produto-create'),
     path('produtos/<int:pk>/editar/', ProdutoUpdateView.as_view(), name='produto-update'),
     path('produtos/<int:pk>/deletar/', ProdutoDeleteView.as_view(), name='produto-delete'),

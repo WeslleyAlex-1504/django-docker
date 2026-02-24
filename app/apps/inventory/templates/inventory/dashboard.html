@@ -50,10 +50,6 @@
         <span class="action-icon">📦</span>
         Novo Lote
     </button>
-    <a href="/admin/" target="_blank" class="action-btn admin">
-        <span class="action-icon">⚙️</span>
-        Administração
-    </a>
 </div>
 
 <!-- Seção de Produtos -->
@@ -177,23 +173,14 @@
             <h3 id="productModalTitle">Novo Produto</h3>
             <span class="modal-close" onclick="closeModal('productModal')">&times;</span>
         </div>
-        <form id="productForm" method="post" onsubmit="return handleProductSubmit(event)">
+        <form id="productForm" method="post">
             {% csrf_token %}
-            <input type="hidden" id="productId" name="product_id">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="productName">Nome do Produto:</label>
-                    <input type="text" id="productName" name="nome" required
-                           placeholder="Ex: Maçã Gala, Banana Prata, etc."
-                           minlength="2" maxlength="120">
-                    <small class="form-help">Mínimo 2 caracteres, não pode ser apenas números</small>
-                </div>
-                <div class="form-group">
-                    <label for="productSku">SKU (Gerado Automaticamente):</label>
-                    <input type="text" id="productSku" name="sku_display" readonly
-                           placeholder="Será gerado automaticamente (001, 002, etc.)"
-                           class="readonly-field">
-                </div>
+            <div class="form-group">
+                <label for="productName">Nome do Produto:</label>
+                <input type="text" id="productName" name="nome" required
+                       placeholder="Ex: Maçã Gala, Banana Prata, etc."
+                       minlength="2" maxlength="120">
+                <small class="form-help">Mínimo 2 caracteres, não pode ser apenas números</small>
             </div>
             <div class="form-group">
                 <label for="productDescription">Descrição:</label>
@@ -224,9 +211,8 @@
             <h3 id="batchModalTitle">Novo Lote</h3>
             <span class="modal-close" onclick="closeModal('batchModal')">&times;</span>
         </div>
-        <form id="batchForm" method="post" onsubmit="return handleBatchSubmit(event)">
+        <form id="batchForm" method="post">
             {% csrf_token %}
-            <input type="hidden" id="batchId" name="batch_id">
             <div class="form-grid">
                 <div class="form-group">
                     <label for="batchProduct">Produto:</label>
@@ -238,22 +224,14 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="batchCode">Código do Lote (Gerado Automaticamente):</label>
-                    <input type="text" id="batchCode" name="codigo_display" readonly
-                           placeholder="Será gerado automaticamente"
-                           class="readonly-field">
-                </div>
-            </div>
-            <div class="form-grid">
-                <div class="form-group">
                     <label for="batchQuantity">Quantidade:</label>
                     <input type="number" id="batchQuantity" name="quantidade" min="1" required
                            placeholder="Ex: 100, 500, 1000">
                 </div>
-                <div class="form-group">
-                    <label for="batchExpiry">Data de Vencimento:</label>
-                    <input type="date" id="batchExpiry" name="data_vencimento" required>
-                </div>
+            </div>
+            <div class="form-group">
+                <label for="batchExpiry">Data de Vencimento:</label>
+                <input type="date" id="batchExpiry" name="data_vencimento" required>
             </div>
             <div class="modal-actions">
                 <button type="button" class="btn secondary" onclick="closeModal('batchModal')">Cancelar</button>
@@ -297,60 +275,71 @@ function openProductModal(id = null, nome = '', sku = '', descricao = '', ativo 
     const modal = document.getElementById('productModal');
     const form = document.getElementById('productForm');
     const title = document.getElementById('productModalTitle');
-    const submitBtn = document.getElementById('productSubmitBtn');
     const submitText = document.getElementById('productSubmitText');
 
     if (id) {
         // Modo edição
         title.textContent = 'Editar Produto';
         submitText.textContent = 'Salvar Alterações';
-        form.action = `/estoque/produtos/${id}/editar/`;
+        form.setAttribute('action', `/estoque/produtos/${id}/editar/`);
+        
+        document.getElementById('productName').value = nome;
+        document.getElementById('productDescription').value = descricao;
+        document.getElementById('productActive').checked = ativo;
     } else {
         // Modo criação
         title.textContent = 'Novo Produto';
         submitText.textContent = 'Cadastrar Produto';
-        form.action = `/estoque/produtos/novo/`;
+        form.setAttribute('action', `/estoque/produtos/novo/`);
+        
+        // Limpar todos os campos
+        document.getElementById('productName').value = '';
+        document.getElementById('productDescription').value = '';
+        document.getElementById('productActive').checked = true;
     }
 
-    document.getElementById('productId').value = id || '';
-    document.getElementById('productName').value = nome;
-    document.getElementById('productSku').value = sku;
-    document.getElementById('productDescription').value = descricao;
-    document.getElementById('productActive').checked = ativo;
-
-    modal.style.display = 'block';
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
 }
 
 function openBatchModal(id = null, produtoId = '', codigo = '', quantidade = '', vencimento = '') {
     const modal = document.getElementById('batchModal');
     const form = document.getElementById('batchForm');
     const title = document.getElementById('batchModalTitle');
-    const submitBtn = document.getElementById('batchSubmitBtn');
     const submitText = document.getElementById('batchSubmitText');
 
     if (id) {
         // Modo edição
         title.textContent = 'Editar Lote';
         submitText.textContent = 'Salvar Alterações';
-        form.action = `/estoque/lotes/${id}/editar/`;
+        form.setAttribute('action', `/estoque/lotes/${id}/editar/`);
+        
+        document.getElementById('batchProduct').value = produtoId;
+        document.getElementById('batchQuantity').value = quantidade;
+        document.getElementById('batchExpiry').value = vencimento;
     } else {
         // Modo criação
         title.textContent = 'Novo Lote';
         submitText.textContent = 'Cadastrar Lote';
-        form.action = `/estoque/lotes/novo/`;
+        form.setAttribute('action', `/estoque/lotes/novo/`);
+        
+        // Limpar todos os campos
+        document.getElementById('batchProduct').value = '';
+        document.getElementById('batchQuantity').value = '';
+        document.getElementById('batchExpiry').value = '';
     }
 
-    document.getElementById('batchId').value = id || '';
-    document.getElementById('batchProduct').value = produtoId;
-    document.getElementById('batchCode').value = codigo;
-    document.getElementById('batchQuantity').value = quantidade;
-    document.getElementById('batchExpiry').value = vencimento;
-
-    modal.style.display = 'block';
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
+    document.getElementById(modalId).classList.remove('show');
+    // Remover a classe modal-open apenas se não há outros modais abertos
+    const modalsAbertos = document.querySelectorAll('.modal.show').length;
+    if (modalsAbertos === 0) {
+        document.body.classList.remove('modal-open');
+    }
 }
 
 function confirmDelete(type, id, name) {
@@ -361,7 +350,7 @@ function confirmDelete(type, id, name) {
         : `Tem certeza que deseja excluir o lote "${name}"? Esta ação não pode ser desfeita.`;
 
     document.getElementById('deleteMessage').textContent = message;
-    document.getElementById('deleteModal').style.display = 'block';
+    document.getElementById('deleteModal').classList.add('show');
 }
 
 function executeDelete() {
@@ -489,7 +478,9 @@ function confirmDelete(type, id, name) {
         : `Tem certeza que deseja excluir o lote "${name}"?`;
 
     document.getElementById('deleteMessage').textContent = message;
-    document.getElementById('deleteModal').style.display = 'block';
+    const deleteModal = document.getElementById('deleteModal');
+    deleteModal.classList.add('show');
+    document.body.classList.add('modal-open');
 }
 
 function executeDelete() {
@@ -535,7 +526,12 @@ document.getElementById('productSearch').addEventListener('input', function() {
 // Fechar modal ao clicar fora
 window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
-        event.target.style.display = 'none';
+        event.target.classList.remove('show');
+        // Remover a classe modal-open apenas se não há outros modais abertos
+        const modalsAbertos = document.querySelectorAll('.modal.show').length;
+        if (modalsAbertos === 0) {
+            document.body.classList.remove('modal-open');
+        }
     }
 }
 </script>
